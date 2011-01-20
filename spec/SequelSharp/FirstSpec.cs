@@ -11,6 +11,13 @@ namespace SequelSharp.Specs {
     [TestFixture]
     public class SequelSpec : Spec {
 
+		[SetUp]
+		public void before_each() {
+			// Drop the databases that we use for testing
+            var db = Sequel.Connect("sqlserver://" + SqlServerConnectionString) as SqlServerDatabase;
+			db.DropDatabase("MyNewDatabase_TestingSequel");
+		}
+
         [Test]
         public void can_connect_to_SQL_Server_using_Sequel_Connect_with_connection_string() {
             var db = Sequel.Connect("sqlserver://" + SqlServerConnectionString) as SqlServerDatabase;

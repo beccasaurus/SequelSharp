@@ -3,6 +3,8 @@ using System.Linq;
 using System.Data.Common;
 using System.Collections.Generic;
 
+using System.Data.SqlClient;
+
 namespace SequelSharp {
 
 	/// <summary>Represents some type of Database</summary>
@@ -28,6 +30,7 @@ namespace SequelSharp {
 		public DbCommand CreateCommand(string sql) {
 			Console.WriteLine("Creating command for: '{0}'", ConnectionString);
 			var command = Connection.CreateCommand();
+			Console.WriteLine("Created command: {0}", command.GetType());
 			command.CommandText = sql;
 			return command;
 		}
@@ -44,16 +47,24 @@ namespace SequelSharp {
 			return command.ExecuteNonQuery();
 		}
 
-		public int ExecuteNonQuery(string sql, Dictionary<string, object> parameters) {
+		public int ExecuteNonQuery(string sql, object parameters) {
+			return ExecuteNonQuery(sql, Util.ObjectToDictionary(parameters));
+		}
+
+		public int ExecuteNonQuery(string sql, IDictionary<string, object> parameters) {
 			var command = CreateCommand(sql);
-			foreach (var param in parameters) {
-				var dbParam           = command.CreateDbParameter();
-				dbParam.ParameterName = param.Key;
-				dbParam.Value         = param.Value;
-				command.Parameters.Add(param);
-			}
+			AddCommandParameters(command, parameters);
 			command.Connection.Open();
 			return command.ExecuteNonQuery();
+		}
+
+		public void AddCommandParameters(DbCommand command, IDictionary<string, object> parameters) {
+			foreach (var param in parameters) {
+				var dbParam           = command.CreateParameter();
+				dbParam.ParameterName = "@" + param.Key;
+				dbParam.Value         = param.Value;
+				command.Parameters.Add(dbParam);
+			}
 		}
 	}
 }

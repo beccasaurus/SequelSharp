@@ -39,11 +39,21 @@ namespace SequelSharp {
 		}
 
 		public bool CreateDatabase(string name) {
-			return ExecuteNonQuery("create database @database_name", new { database_name = name }) > 0;
+			try {
+				ExecuteNonQuery("create database " + name); return true;
+			} catch (SqlException ex) {
+				if (ex.Message.Contains("already exists. Choose a different database name.")) return false;
+				throw ex;
+			}
 		}
 
 		public bool DropDatabase(string name) {
-			throw new NotImplementedException("not done");
+			try {
+				ExecuteNonQuery("drop database " + name); return true;
+			} catch (SqlException ex) {
+				if (ex.Message.Contains("it does not exist")) return false;
+				throw ex;
+			}
 		}
 		#endregion
 	}
