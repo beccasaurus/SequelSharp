@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -161,5 +162,54 @@ namespace SequelSharp.Specs {
         [Test][Ignore]
         public void connecting_to_non_extent_database_returns_null_if_Sequel_ThrowExceptions_is_false() {
         }
+
+		[Test]
+		public void can_get_columns_in_table() {
+            var db = Sequel.Connect("sqlserver://" + SqlServerConnectionString) as SqlServerDatabase;
+			db.CreateDatabase("MyNewDatabase_TestingSequel");
+			db.Use("MyNewDatabase_TestingSequel");
+			db.CreateTable("my_first_table", "id int not null primary key, name varchar(255)");
+
+			var conn = db.Connection;
+			conn.Open();
+
+			//var schema = conn.GetSchema("Tables");
+			/*
+TABLE_CATALOG: MyNewDatabase_TestingSequel
+TABLE_SCHEMA: dbo
+TABLE_NAME: my_first_table
+TABLE_TYPE: BASE TABLE
+			*/
+
+			var schema = conn.GetSchema("Columns");
+			/*
+
+ATALOG: MyNewDatabase_TestingSequel
+TABLE_SCHEMA: dbo
+TABLE_NAME: my_first_table
+COLUMN_NAME: id
+ORDINAL_POSITION: 1
+COLUMN_DEFAULT: 
+IS_NULLABLE: NO
+DATA_TYPE: int
+CHARACTER_MAXIMUM_LENGTH: 
+CHARACTER_OCTET_LENGTH: 
+NUMERIC_PRECISION: 10
+NUMERIC_PRECISION_RADIX: 10
+NUMERIC_SCALE: 0
+DATETIME_PRECISION: 
+CHARACTER_SET_CATALOG: 
+CHARACTER_SET_SCHEMA: 
+CHARACTER_SET_NAME: 
+COLLATION_CATALOG:
+
+
+			foreach (DataRow row in schema.Rows) {
+				foreach (DataColumn column in schema.Columns) {
+					Console.WriteLine("{0}: {1}", column.ColumnName, row[column]);
+				}
+				Console.WriteLine("\n\n");
+			}
+		}
     }
 }
