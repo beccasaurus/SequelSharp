@@ -3,6 +3,7 @@ using System.Linq;
 using System.Data.Common;
 using System.Data.SqlClient;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace SequelSharp {
 
@@ -23,17 +24,28 @@ namespace SequelSharp {
 				return _connection;
 			}
 		}
+
+		public override List<Table> Tables {
+			get {
+				var tables = new List<Table>();
+				using (var reader = ExecuteReader("select name from sys.tables"))
+					while (reader.Read())
+						tables.Add(new Table {
+							Database = this,
+							Name     = reader["name"].ToString() 
+						});
+				return tables;
+			}
+		}
 		#endregion
 
 		#region Custom SqlServerDatabase methods
 		public List<string> DatabaseNames {
 			get {
 				var names = new List<string>();
-
 				using (var reader = ExecuteReader("select name from sys.databases"))
 					while (reader.Read())
 						names.Add(reader["name"].ToString());
-
 				return names;
 			}
 		}
@@ -54,6 +66,12 @@ namespace SequelSharp {
 				if (ex.Message.Contains("it does not exist")) return false;
 				throw ex;
 			}
+		}
+
+		// Right now, this ONLY works if your ConnectionString uses this format:
+		//   Initial Catalog=...
+		public void Use(string databaseName){
+			ConnectionString = Regex.Replace(ConnectionString, "Initial Catalog=[^;]+", "Initial Catalog=" + databaseName);
 		}
 		#endregion
 	}

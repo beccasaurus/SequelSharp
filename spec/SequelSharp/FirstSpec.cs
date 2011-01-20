@@ -30,8 +30,23 @@ namespace SequelSharp.Specs {
 			});
         }
 
-		[Test][Ignore]
+		[Test]
+		public void can_list_tables_in_database() {
+            var db = Sequel.Connect("sqlserver://" + SqlServerConnectionString) as SqlServerDatabase;
+			db.TableNames.ShouldContain("spt_fallback_db"); // do all master databases have this?
+		}
+
+		[Test]
 		public void can_Use_a_database() {
+            var db = Sequel.Connect("sqlserver://" + SqlServerConnectionString) as SqlServerDatabase;
+			db.TableNames.ShouldContain("spt_fallback_db"); // do all master databases have this?
+
+			db.CreateDatabase("MyNewDatabase_TestingSequel");
+			db.Use("MyNewDatabase_TestingSequel");
+			db.TableNames.ShouldNotContain("spt_fallback_db");
+
+			db.Use("master");
+			db.TableNames.ShouldContain("spt_fallback_db"); // do all master databases have this?
 		}
 
 		[Test][Ignore]
@@ -75,12 +90,43 @@ namespace SequelSharp.Specs {
 			db.CreateDatabase("MyNewDatabase_TestingSequel").ShouldBeFalse();
         }
 
-        [Test][Ignore]
+        [Test]
         public void can_drop_database() {
+            var db = Sequel.Connect("sqlserver://" + SqlServerConnectionString) as SqlServerDatabase;
+			db.CreateDatabase("MyNewDatabase_TestingSequel");
+			db.DatabaseNames.ShouldContain("MyNewDatabase_TestingSequel");
+
+			db.DropDatabase("MyNewDatabase_TestingSequel").ShouldBeTrue(); // Returns whether or not it was successful
+
+			db.DatabaseNames.ShouldNotContain("MyNewDatabase_TestingSequel");
+
+			// If we try adding it again, it should be false
+			db.DropDatabase("MyNewDatabase_TestingSequel").ShouldBeFalse();
         }
 
-        [Test][Ignore]
+		// We need to support VERY SIMPLE create table support so we can test INSERT statements
+        [Test]
         public void can_add_table_to_database() {
+            var db = Sequel.Connect("sqlserver://" + SqlServerConnectionString) as SqlServerDatabase;
+			db.CreateDatabase("MyNewDatabase_TestingSequel");
+			db.Use("MyNewDatabase_TestingSequel");
+
+			db.TableNames.ShouldNotContain("my_first_table");
+
+			db.CreateTable("my_first_table", t => {
+				t.String("Foo");
+				t.String("Whatever", length: 50, nullable: false);
+			});
+
+			// db.NewTable("my_first_table").
+			// 	WithColumn().
+			// 	WithColumn().
+			// 	WithColumn().
+			// 	Create();
+
+			// db.CreateTable("my_first_table", Columns[]);
+
+			db.TableNames.ShouldContain("my_first_table");
         }
 
         [Test][Ignore]

@@ -7,8 +7,19 @@ using System.Data.SqlClient;
 
 namespace SequelSharp {
 
+	// not sure what we're gonna do with this ...
+	public class Table {
+		public Database Database { get; set; }
+		public string Name { get; set; }
+	}
+
 	/// <summary>Represents some type of Database</summary>
 	public abstract class Database {
+
+		#region Abstract Methods/Properties that your Database class needs to implement
+		public abstract DbConnection Connection { get; }
+		public abstract List<Table> Tables { get; }
+		#endregion
 
 		/// <summary>This database's real, native connection string</summary>
 		/// <remarks>
@@ -25,12 +36,8 @@ namespace SequelSharp {
 			ConnectionString = connectionString;
 		}
 
-		public abstract DbConnection Connection { get; }
-
 		public DbCommand CreateCommand(string sql) {
-			Console.WriteLine("Creating command for: '{0}'", ConnectionString);
 			var command = Connection.CreateCommand();
-			Console.WriteLine("Created command: {0}", command.GetType());
 			command.CommandText = sql;
 			return command;
 		}
@@ -65,6 +72,10 @@ namespace SequelSharp {
 				dbParam.Value         = param.Value;
 				command.Parameters.Add(dbParam);
 			}
+		}
+
+		public List<string> TableNames {
+			get { return Tables.Select(table => table.Name).ToList(); }
 		}
 	}
 }
