@@ -1,16 +1,44 @@
 using System;
 using System.Linq;
+using System.Data;
 using System.Data.Common;
 using System.Collections.Generic;
 
-using System.Data.SqlClient;
+using System.Data.SqlClient; // make this go away!
 
 namespace SequelSharp {
 
-	// not sure what we're gonna do with this ...
+	// NOTE once we have more implemented, we'll clean this up and put classes into their own files ...
+
+	public class Column {
+		public Table Table { get; set; }
+		public string Name { get; set; }
+		public DbType DataType { get; set; }
+	}
+
 	public class Table {
 		public Database Database { get; set; }
 		public string Name { get; set; }
+
+		public ColumnList Columns {
+			get { return Database.GetColumns(this); }
+		}
+
+		public List<string> ColumnNames {
+			get { return Columns.Select(c => c.Name).ToList(); }
+		}
+	}
+
+	public class ColumnList : List<Column>, IList<Column> {
+		public Column this[string name] {
+			get { return this.FirstOrDefault(c => c.Name == name); }
+		}
+	}
+
+	public class TableList : List<Table>, IList<Table> {
+		public Table this[string name] {
+			get { return this.FirstOrDefault(t => t.Name == name); }
+		}
 	}
 
 	/// <summary>Represents some type of Database</summary>
@@ -18,7 +46,6 @@ namespace SequelSharp {
 
 		#region Abstract Methods/Properties that your Database class needs to implement
 		public abstract DbConnection Connection { get; }
-		public abstract List<Table> Tables { get; }
 		#endregion
 
 		/// <summary>This database's real, native connection string</summary>
@@ -88,10 +115,52 @@ namespace SequelSharp {
 			get { return Tables.Select(table => table.Name).ToList(); }
 		}
 
+		public DataTable GetSchema(string collectionName) {
+			using (var connection = Connection) {
+				connection.Open();
+				return connection.GetSchema(collectionName);
+			}
+		}
+
+		public DataTable ColumnSchema { get { return GetSchema("Columns"); } }
+		public DataTable TableSchema  { get { return GetSchema("Tables");  } }
+
 		// TODO CreateTable will eventually have a DSL and each adapter will need to generate the CREATE TABLE sql from our column data.
 		//      But, for now, we just need to get this working, so we're just using raw SQL ...
 		public bool CreateTable(string tableName, string columnSql) {
 			return ExecuteNonQuery(string.Format("CREATE TABLE {0} ({1})", tableName, columnSql)) > 0;
+		}
+
+		public virtual TableList Tables {
+			get {
+				var tables = new TableList();
+				var schema = TableSchema;
+				foreach (DataRow row in schema.Rows)
+					tables.Add(new Table { Database = this, Name = row["TABLE_NAME"].ToString() });
+				return tables;
+			}
+		}
+
+		public virtual ColumnList GetColumns(Table table) {
+			var columns = new ColumnList();
+			var schema  = ColumnSchema;
+			foreach (DataRow row in schema.Rows)
+				if (row["TABLE_NAME"].ToString() == table.Name)
+					columns.Add(new Column { Table = table, Name = row["COLUMN_NAME"].ToString(), DataType = StringToDbType(row["DATA_TYPE"].ToString()) });
+			return columns;
+		}
+
+		public virtual DbType StringToDbType(string name) {
+			switch (name.ToLower().Trim()) {
+				case "int":     return DbType.Int32;
+				case "varchar": return DbType.String;
+				default:
+					throw new Exception("Don't know what DbType to return for: " + name);
+			}
+		}
+
+		public virtual Table this[string tableName] {
+			get { return Tables[tableName]; }
 		}
 	}
 }

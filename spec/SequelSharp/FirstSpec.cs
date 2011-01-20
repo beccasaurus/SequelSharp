@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Data;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Collections.Generic;
 using NUnit.Framework;
 using SequelSharp;
 
@@ -170,19 +170,29 @@ namespace SequelSharp.Specs {
 			db.Use("MyNewDatabase_TestingSequel");
 			db.CreateTable("my_first_table", "id int not null primary key, name varchar(255)");
 
-			var conn = db.Connection;
-			conn.Open();
+			db.Tables["my_first_table"].ColumnNames.Count.ShouldEqual(2);
+			db.Tables["my_first_table"].ColumnNames.ShouldContain("id");
+			db.Tables["my_first_table"].ColumnNames.ShouldContain("name");
+			(db.Tables["my_first_table"].Columns["id"].DataType.CompareTo(DbType.Int32)).ShouldEqual(0);
+			(db.Tables["my_first_table"].Columns["name"].DataType.CompareTo(DbType.String)).ShouldEqual(0);
 
+			// shortcut
+			db["my_first_table"].ColumnNames.Count.ShouldEqual(2);
+			db["my_first_table"].ColumnNames.ShouldContain("id");
+			db["my_first_table"].ColumnNames.ShouldContain("name");
+		}
+    }
+}
+
+
+/*
 			//var schema = conn.GetSchema("Tables");
-			/*
 TABLE_CATALOG: MyNewDatabase_TestingSequel
 TABLE_SCHEMA: dbo
 TABLE_NAME: my_first_table
 TABLE_TYPE: BASE TABLE
-			*/
 
 			var schema = conn.GetSchema("Columns");
-			/*
 
 ATALOG: MyNewDatabase_TestingSequel
 TABLE_SCHEMA: dbo
@@ -203,13 +213,10 @@ CHARACTER_SET_SCHEMA:
 CHARACTER_SET_NAME: 
 COLLATION_CATALOG:
 
-
 			foreach (DataRow row in schema.Rows) {
 				foreach (DataColumn column in schema.Columns) {
 					Console.WriteLine("{0}: {1}", column.ColumnName, row[column]);
 				}
 				Console.WriteLine("\n\n");
 			}
-		}
-    }
-}
+*/

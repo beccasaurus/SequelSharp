@@ -19,17 +19,6 @@ namespace SequelSharp {
 		public override DbConnection Connection {
 			get { return new SqlConnection(ConnectionString); }
 		}
-
-		public override List<Table> Tables {
-			get {
-				var tables = new List<Table>();
-				ExecuteReader("select name from sys.tables", reader => {
-					while (reader.Read())
-						tables.Add(new Table { Database = this, Name = reader["name"].ToString() });
-				});
-				return tables;
-			}
-		}
 		#endregion
 
 		#region Custom SqlServerDatabase methods
