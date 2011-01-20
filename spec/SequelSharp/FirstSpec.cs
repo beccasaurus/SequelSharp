@@ -181,6 +181,22 @@ namespace SequelSharp.Specs {
 			db["my_first_table"].ColumnNames.ShouldContain("id");
 			db["my_first_table"].ColumnNames.ShouldContain("name");
 		}
+
+		[Test]
+		public void can_insert_new_rows() {
+            var db = Sequel.Connect("sqlserver://" + SqlServerConnectionString) as SqlServerDatabase;
+			db.CreateDatabase("MyNewDatabase_TestingSequel");
+			db.Use("MyNewDatabase_TestingSequel");
+			db.CreateTable("my_first_table", "id int not null primary key, name varchar(255)");
+
+			var table = db["my_first_table"];
+			table.Count.ShouldEqual(0);
+
+			table.Insert(new { name = "My Name" });
+
+			table.Count.ShouldEqual(1);
+			// check columns ... table.First ...
+		}
     }
 }
 
