@@ -1,0 +1,3 @@
+#! /bin/bash
+export NUNIT_CONSOLE=nunit-console4
+/opt/mono-2.8/bin/xbuild && nunit-color-console -labels "$@" bin/Debug/SequelSharp.Specs.dll

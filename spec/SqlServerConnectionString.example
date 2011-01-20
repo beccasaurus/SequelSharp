@@ -1,0 +1,1 @@
+Data Source=localhost\SQLEXPRESS; Initial Catalog=master; User Id=sa; Password=secret;
