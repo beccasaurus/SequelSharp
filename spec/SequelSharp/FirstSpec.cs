@@ -113,10 +113,15 @@ namespace SequelSharp.Specs {
 
 			db.TableNames.ShouldNotContain("my_first_table");
 
-			db.CreateTable("my_first_table", t => {
-				t.String("Foo");
-				t.String("Whatever", length: 50, nullable: false);
-			});
+			// crappy CreateTable implementation, but it's a start ... we don't NEED CreateTable support in SequelSharp yet.  We need Insert support more.  Fix this later!
+			db.CreateTable("my_first_table", "id int not null primary key, name varchar(255)");
+
+			db.TableNames.ShouldContain("my_first_table");
+
+			// db.CreateTable("my_first_table", t => {
+			// 	t.String("Foo");
+			// 	t.String("Whatever", length: 50, nullable: false);
+			// });
 
 			// db.NewTable("my_first_table").
 			// 	WithColumn().
@@ -126,7 +131,23 @@ namespace SequelSharp.Specs {
 
 			// db.CreateTable("my_first_table", Columns[]);
 
-			db.TableNames.ShouldContain("my_first_table");
+			/*
+				CreateTable syntaxes I want to support ...
+
+				var table = db.NewTable("foo"); // or new TableBuilder("foo", db);
+				table.AddColumn();
+				table.AddColumn();
+				table.Create(); // or db.CreateTable(table);
+
+				Also ... CreateTable("dogs", "id INT, name TEXT");
+
+				Also ... CreateTable("dogs", t => {
+					t.Column(typeof(String), "Name");
+					t.Column<string>("Name");
+					t.String("name");
+				});
+
+			 */
         }
 
         [Test][Ignore]

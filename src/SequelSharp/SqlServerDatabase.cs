@@ -16,24 +16,17 @@ namespace SequelSharp {
 	public class SqlServerDatabase : Database {
 
 		#region SequelSharp.Database implementation
-		DbConnection _connection;
 		public override DbConnection Connection {
-			get {
-				if (_connection == null)
-					return new SqlConnection(ConnectionString);
-				return _connection;
-			}
+			get { return new SqlConnection(ConnectionString); }
 		}
 
 		public override List<Table> Tables {
 			get {
 				var tables = new List<Table>();
-				using (var reader = ExecuteReader("select name from sys.tables"))
+				ExecuteReader("select name from sys.tables", reader => {
 					while (reader.Read())
-						tables.Add(new Table {
-							Database = this,
-							Name     = reader["name"].ToString() 
-						});
+						tables.Add(new Table { Database = this, Name = reader["name"].ToString() });
+				});
 				return tables;
 			}
 		}
@@ -43,9 +36,10 @@ namespace SequelSharp {
 		public List<string> DatabaseNames {
 			get {
 				var names = new List<string>();
-				using (var reader = ExecuteReader("select name from sys.databases"))
+				ExecuteReader("select name from sys.databases", reader => {
 					while (reader.Read())
 						names.Add(reader["name"].ToString());
+				});
 				return names;
 			}
 		}
@@ -60,6 +54,8 @@ namespace SequelSharp {
 		}
 
 		public bool DropDatabase(string name) {
+			Use("master");
+			SqlConnection.ClearAllPools();
 			try {
 				ExecuteNonQuery("drop database " + name); return true;
 			} catch (SqlException ex) {
@@ -71,6 +67,7 @@ namespace SequelSharp {
 		// Right now, this ONLY works if your ConnectionString uses this format:
 		//   Initial Catalog=...
 		public void Use(string databaseName){
+			Console.WriteLine("Use('{0}')", databaseName);
 			ConnectionString = Regex.Replace(ConnectionString, "Initial Catalog=[^;]+", "Initial Catalog=" + databaseName);
 		}
 		#endregion

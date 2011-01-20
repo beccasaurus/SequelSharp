@@ -42,16 +42,23 @@ namespace SequelSharp {
 			return command;
 		}
 
-		public DbDataReader ExecuteReader(string sql) {
+		public void ExecuteReader(string sql, Action<DbDataReader> action) {
+			Console.WriteLine("ExecuteReader('{0}')", sql);
 			var command = CreateCommand(sql);
-			command.Connection.Open();
-			return command.ExecuteReader();
+			using (var connection = command.Connection) {
+				connection.Open();
+				using (var reader = command.ExecuteReader())
+					action.Invoke(reader);
+			}
 		}
 
 		public int ExecuteNonQuery(string sql) {
+			Console.WriteLine("ExecuteNonQuery('{0}')", sql);
 			var command = CreateCommand(sql);
-			command.Connection.Open();
-			return command.ExecuteNonQuery();
+			using (var connection = command.Connection) {
+				connection.Open();
+				return command.ExecuteNonQuery();
+			}
 		}
 
 		public int ExecuteNonQuery(string sql, object parameters) {
@@ -59,10 +66,13 @@ namespace SequelSharp {
 		}
 
 		public int ExecuteNonQuery(string sql, IDictionary<string, object> parameters) {
+			Console.WriteLine("ExecuteNonQuery('{0}', [parameters])", sql);
 			var command = CreateCommand(sql);
 			AddCommandParameters(command, parameters);
-			command.Connection.Open();
-			return command.ExecuteNonQuery();
+			using (var connection = command.Connection) {
+				connection.Open();
+				return command.ExecuteNonQuery();
+			}
 		}
 
 		public void AddCommandParameters(DbCommand command, IDictionary<string, object> parameters) {
@@ -76,6 +86,12 @@ namespace SequelSharp {
 
 		public List<string> TableNames {
 			get { return Tables.Select(table => table.Name).ToList(); }
+		}
+
+		// TODO CreateTable will eventually have a DSL and each adapter will need to generate the CREATE TABLE sql from our column data.
+		//      But, for now, we just need to get this working, so we're just using raw SQL ...
+		public bool CreateTable(string tableName, string columnSql) {
+			return ExecuteNonQuery(string.Format("CREATE TABLE {0} ({1})", tableName, columnSql)) > 0;
 		}
 	}
 }
