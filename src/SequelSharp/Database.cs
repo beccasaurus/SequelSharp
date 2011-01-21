@@ -10,6 +10,9 @@ namespace SequelSharp {
 
 	// NOTE once we have more implemented, we'll clean this up and put classes into their own files ...
 
+	public class TableRow : Dictionary<string, object>, IDictionary<string, object> {
+	}
+
 	public class Column {
 		public Table Table { get; set; }
 		public string Name { get; set; }
@@ -28,6 +31,25 @@ namespace SequelSharp {
 			get { return Columns.Select(c => c.Name).ToList(); }
 		}
 
+		public string KeyName {
+			get { return string.Join(", ", KeyNames.ToArray()); }
+		}
+
+		public List<string> KeyNames {
+			get { return KeyColumns.Select(c => c.Name).ToList(); }
+		}
+
+		public ColumnList KeyColumns {
+			get {
+				var columns = new ColumnList();
+				foreach (DataRow row in Database.IndexColumnsSchema.Rows)
+					if (row["table_name"].ToString() == this.Name)
+						if (row["constraint_name"].ToString().StartsWith("PK_"))
+							columns.Add(this.Columns[row["column_name"].ToString()]);
+				return columns;
+			}
+		}
+
 		public int Count {
 			get { return (int) Database.ExecuteScalar(string.Format("SELECT COUNT(*) FROM {0}", this.Name)); }
 		}
@@ -35,12 +57,47 @@ namespace SequelSharp {
 		public int Insert(object columns) {
 			return Insert(Util.ObjectToDictionary(columns));
 		}
+
 		public int Insert(IDictionary<string, object> columns) {
 			var columnNames      = string.Join(", ", columns.Keys.ToArray());
 			var columnParameters = string.Join(", ", columns.Keys.Select(key => "@" + key).ToArray());
 			var sql              = string.Format("INSERT INTO {0} ({1}) values ({2})", this.Name, columnNames, columnParameters);
 
 			return Database.ExecuteNonQuery(sql, columns);
+		}
+
+		public TableRowList All {
+			get {
+				// TODO dry this up ...
+				var rows = new TableRowList();
+				Database.ExecuteReader("select * from " + this.Name, reader => {
+					while (reader.Read())
+						rows.Add(reader);
+				});
+				return rows;
+			}
+		}
+
+		public TableRow First {
+			get {
+				var rows = new TableRowList();
+				Database.ExecuteReader("select top 1 * from " + this.Name, reader => {
+					while (reader.Read())
+						rows.Add(reader);
+				});
+				return rows.FirstOrDefault();
+			}
+		}
+
+		public TableRow Last {
+			get {
+				var rows = new TableRowList();
+				Database.ExecuteReader("select top 1 * from " + this.Name + " order by " + this.KeyName + " desc", reader => {
+					while (reader.Read())
+						rows.Add(reader);
+				});
+				return rows.FirstOrDefault();
+			}
 		}
 	}
 
@@ -53,6 +110,15 @@ namespace SequelSharp {
 	public class TableList : List<Table>, IList<Table> {
 		public Table this[string name] {
 			get { return this.FirstOrDefault(t => t.Name == name); }
+		}
+	}
+
+	public class TableRowList : List<TableRow>, IList<TableRow> {
+		public void Add(DbDataReader reader) {
+			var row = new TableRow();
+			for (int i = 0; i < reader.FieldCount; i++)
+				row.Add(reader.GetName(i), reader[i]);
+			base.Add(row);
 		}
 	}
 
@@ -103,7 +169,7 @@ namespace SequelSharp {
 		}
 
 		public int ExecuteNonQuery(string sql, IDictionary<string, object> parameters) {
-			Console.WriteLine("ExecuteNonQuery('{0}', [parameters])", sql);
+			Console.WriteLine("ExecuteNonQuery('{0}', {1})", sql, parameters == null ? "null" : string.Join(", ", parameters.Select(i => i.Key + " = " + i.Value.ToString()).ToArray()));
 			var command = CreateCommand(sql);
 			AddCommandParameters(command, parameters);
 			using (var connection = command.Connection) {
@@ -121,7 +187,7 @@ namespace SequelSharp {
 		}
 
 		public object ExecuteScalar(string sql, IDictionary<string, object> parameters) {
-			Console.WriteLine("ExecuteScalar('{0}', [parameters])", sql);
+			Console.WriteLine("ExecuteScalar('{0}', {1})", sql, parameters == null ? "null" : string.Join(", ", parameters.Select(i => i.Key + " = " + i.Value.ToString()).ToArray()));
 			var command = CreateCommand(sql);
 			AddCommandParameters(command, parameters);
 			using (var connection = command.Connection) {
@@ -151,8 +217,9 @@ namespace SequelSharp {
 			}
 		}
 
-		public DataTable ColumnSchema { get { return GetSchema("Columns"); } }
-		public DataTable TableSchema  { get { return GetSchema("Tables");  } }
+		public DataTable ColumnSchema        { get { return GetSchema("Columns");      } }
+		public DataTable TableSchema         { get { return GetSchema("Tables");       } }
+		public DataTable IndexColumnsSchema  { get { return GetSchema("IndexColumns"); } }
 
 		// TODO CreateTable will eventually have a DSL and each adapter will need to generate the CREATE TABLE sql from our column data.
 		//      But, for now, we just need to get this working, so we're just using raw SQL ...

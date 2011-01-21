@@ -115,7 +115,7 @@ namespace SequelSharp.Specs {
 			db.TableNames.ShouldNotContain("my_first_table");
 
 			// crappy CreateTable implementation, but it's a start ... we don't NEED CreateTable support in SequelSharp yet.  We need Insert support more.  Fix this later!
-			db.CreateTable("my_first_table", "id int not null identity, name varchar(255)");
+			db.CreateTable("my_first_table", "id int primary key identity, name varchar(255)");
 
 			db.TableNames.ShouldContain("my_first_table");
 
@@ -168,7 +168,7 @@ namespace SequelSharp.Specs {
             var db = Sequel.Connect("sqlserver://" + SqlServerConnectionString) as SqlServerDatabase;
 			db.CreateDatabase("MyNewDatabase_TestingSequel");
 			db.Use("MyNewDatabase_TestingSequel");
-			db.CreateTable("my_first_table", "id int not null identity, name varchar(255)");
+			db.CreateTable("my_first_table", "id int primary key identity, name varchar(255)");
 
 			db.Tables["my_first_table"].ColumnNames.Count.ShouldEqual(2);
 			db.Tables["my_first_table"].ColumnNames.ShouldContain("id");
@@ -180,6 +180,13 @@ namespace SequelSharp.Specs {
 			db["my_first_table"].ColumnNames.Count.ShouldEqual(2);
 			db["my_first_table"].ColumnNames.ShouldContain("id");
 			db["my_first_table"].ColumnNames.ShouldContain("name");
+
+			// getting the key
+			db["my_first_table"].KeyName.ShouldEqual("id");
+			db["my_first_table"].KeyColumns.Count.ShouldEqual(1);
+			db["my_first_table"].KeyColumns.First().Name.ShouldEqual("id");
+
+			// using dynamic to get the table
 		}
 
 		[Test]
@@ -187,7 +194,7 @@ namespace SequelSharp.Specs {
             var db = Sequel.Connect("sqlserver://" + SqlServerConnectionString) as SqlServerDatabase;
 			db.CreateDatabase("MyNewDatabase_TestingSequel");
 			db.Use("MyNewDatabase_TestingSequel");
-			db.CreateTable("my_first_table", "id int not null identity, name varchar(255)");
+			db.CreateTable("my_first_table", "id int primary key identity, name varchar(255)");
 
 			var table = db["my_first_table"];
 			table.Count.ShouldEqual(0);
@@ -195,7 +202,9 @@ namespace SequelSharp.Specs {
 			table.Insert(new { name = "My Name" });
 
 			table.Count.ShouldEqual(1);
-			// check columns ... table.First ...
+			table.All.First()["name"].ShouldEqual("My Name");
+			table.First["name"].ShouldEqual("My Name");
+			table.Last["name"].ShouldEqual("My Name");
 		}
     }
 }
@@ -235,4 +244,16 @@ COLLATION_CATALOG:
 				}
 				Console.WriteLine("\n\n");
 			}
+
+constraint_catalog = MyNewDatabase_TestingSequel
+constraint_schema = dbo
+constraint_name = PK__my_first_table__7C8480AE
+table_catalog = MyNewDatabase_TestingSequel
+table_schema = dbo
+table_name = my_first_table
+column_name = id
+ordinal_position = 1
+keyType = 56
+index_name = PK__my_first_table__7C8480AE
+
 */
