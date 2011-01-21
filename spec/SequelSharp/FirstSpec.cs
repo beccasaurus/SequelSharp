@@ -186,7 +186,9 @@ namespace SequelSharp.Specs {
 			db["my_first_table"].KeyColumns.Count.ShouldEqual(1);
 			db["my_first_table"].KeyColumns.First().Name.ShouldEqual("id");
 
-			// using dynamic to get the table
+			// TODO
+			// using dynamic to get the table and columns
+			// db.my_first_table.Columns.id.DataType.CompareTo(DbType.Int32).ShouldEqual(0);
 		}
 
 		[Test]
@@ -205,6 +207,29 @@ namespace SequelSharp.Specs {
 			table.All.First()["name"].ShouldEqual("My Name");
 			table.First["name"].ShouldEqual("My Name");
 			table.Last["name"].ShouldEqual("My Name");
+		}
+
+		[Test]
+		public void can_update_rows() {
+            var db = Sequel.Connect("sqlserver://" + SqlServerConnectionString) as SqlServerDatabase;
+			db.CreateDatabase("MyNewDatabase_TestingSequel");
+			db.Use("MyNewDatabase_TestingSequel");
+			db.CreateTable("my_first_table", "id int primary key identity, name varchar(255)");
+
+			var table = db["my_first_table"];
+			table.Count.ShouldEqual(0);
+
+			table.Insert(new { name = "My Name" });
+
+			table.Count.ShouldEqual(1);
+			table.First["name"].ShouldEqual("My Name");
+
+			table.First.Table.Name.ShouldEqual("my_first_table"); // make sure the column knows its table
+			table.First.Update(new { name = "Changed Name!" });
+
+			table.Count.ShouldEqual(1);
+			table.First["name"].ShouldNotEqual("My Name");
+			table.First["name"].ShouldEqual("Changed Name!");
 		}
     }
 }

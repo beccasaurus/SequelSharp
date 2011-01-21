@@ -11,6 +11,28 @@ namespace SequelSharp {
 	// NOTE once we have more implemented, we'll clean this up and put classes into their own files ...
 
 	public class TableRow : Dictionary<string, object>, IDictionary<string, object> {
+		public Table Table { get; set; }
+
+		public string TableName { get { return Table.Name; } }
+
+		public int Update(object columns) {
+			return Update(Util.ObjectToDictionary(columns));
+		}
+
+		public object Key {
+			get { return this[Table.KeyName]; }
+		}
+
+		public Database Database {
+			get { return Table.Database; }
+		}
+
+		public int Update(IDictionary<string, object> columns) {
+			var setText = string.Join(", ", columns.Select(c => string.Format("{0} = @{1}", c.Key, c.Key)).ToArray());
+			var sql     = string.Format("UPDATE {0} SET {1} WHERE {2} = @updateKeyValue", TableName, setText, Table.KeyName);
+			columns["updateKeyValue"] = Key;
+			return Database.ExecuteNonQuery(sql, columns);
+		}
 	}
 
 	public class Column {
@@ -67,15 +89,15 @@ namespace SequelSharp {
 		}
 
 		public TableRowList All {
-			get { return Database.GetRows("select * from " + this.Name); }
+			get { return Database.GetRows(this, "select * from " + this.Name); }
 		}
 
 		public TableRow First {
-			get { return Database.GetRow("select top 1 * from " + this.Name); }
+			get { return Database.GetRow(this, "select top 1 * from " + this.Name); }
 		}
 
 		public TableRow Last {
-			get { return Database.GetRow("select top 1 * from " + this.Name + " order by " + this.KeyName + " desc"); }
+			get { return Database.GetRow(this, "select top 1 * from " + this.Name + " order by " + this.KeyName + " desc"); }
 		}
 	}
 
@@ -92,8 +114,8 @@ namespace SequelSharp {
 	}
 
 	public class TableRowList : List<TableRow>, IList<TableRow> {
-		public void Add(DbDataReader reader) {
-			var row = new TableRow();
+		public void Add(Table table, DbDataReader reader) {
+			var row = new TableRow { Table = table };
 			for (int i = 0; i < reader.FieldCount; i++)
 				row.Add(reader.GetName(i), reader[i]);
 			base.Add(row);
@@ -183,33 +205,33 @@ namespace SequelSharp {
 			}
 		}
 
-		public TableRowList GetRows(string sql) {
-			return GetRows(sql, null);
+		public TableRowList GetRows(Table table, string sql) {
+			return GetRows(table, sql, null);
 		}
 
-		public TableRowList GetRows(string sql, object parameters) {
-			return GetRows(sql, Util.ObjectToDictionary(parameters));
+		public TableRowList GetRows(Table table, string sql, object parameters) {
+			return GetRows(table, sql, Util.ObjectToDictionary(parameters));
 		}
 
-		public TableRowList GetRows(string sql, IDictionary<string, object> parameters) {
+		public TableRowList GetRows(Table table, string sql, IDictionary<string, object> parameters) {
 			var rows = new TableRowList();
 			ExecuteReader(sql, parameters, reader => {
 				while (reader.Read())
-					rows.Add(reader);
+					rows.Add(table, reader);
 			});
 			return rows;
 		}
 
-		public TableRow GetRow(string sql) {
-			return GetRow(sql, null);
+		public TableRow GetRow(Table table, string sql) {
+			return GetRow(table, sql, null);
 		}
 
-		public TableRow GetRow(string sql, object parameters) {
-			return GetRow(sql, Util.ObjectToDictionary(parameters));
+		public TableRow GetRow(Table table, string sql, object parameters) {
+			return GetRow(table, sql, Util.ObjectToDictionary(parameters));
 		}
 
-		public TableRow GetRow(string sql, IDictionary<string, object> parameters) {
-			return GetRows(sql, parameters).FirstOrDefault();
+		public TableRow GetRow(Table table, string sql, IDictionary<string, object> parameters) {
+			return GetRows(table, sql, parameters).FirstOrDefault();
 		}
 
 		public void AddCommandParameters(DbCommand command, IDictionary<string, object> parameters) {
