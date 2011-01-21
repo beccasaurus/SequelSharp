@@ -115,7 +115,7 @@ namespace SequelSharp.Specs {
 			db.TableNames.ShouldNotContain("my_first_table");
 
 			// crappy CreateTable implementation, but it's a start ... we don't NEED CreateTable support in SequelSharp yet.  We need Insert support more.  Fix this later!
-			db.CreateTable("my_first_table", "id int not null primary key, name varchar(255)");
+			db.CreateTable("my_first_table", "id int not null identity, name varchar(255)");
 
 			db.TableNames.ShouldContain("my_first_table");
 
@@ -168,7 +168,7 @@ namespace SequelSharp.Specs {
             var db = Sequel.Connect("sqlserver://" + SqlServerConnectionString) as SqlServerDatabase;
 			db.CreateDatabase("MyNewDatabase_TestingSequel");
 			db.Use("MyNewDatabase_TestingSequel");
-			db.CreateTable("my_first_table", "id int not null primary key, name varchar(255)");
+			db.CreateTable("my_first_table", "id int not null identity, name varchar(255)");
 
 			db.Tables["my_first_table"].ColumnNames.Count.ShouldEqual(2);
 			db.Tables["my_first_table"].ColumnNames.ShouldContain("id");
@@ -187,7 +187,7 @@ namespace SequelSharp.Specs {
             var db = Sequel.Connect("sqlserver://" + SqlServerConnectionString) as SqlServerDatabase;
 			db.CreateDatabase("MyNewDatabase_TestingSequel");
 			db.Use("MyNewDatabase_TestingSequel");
-			db.CreateTable("my_first_table", "id int not null primary key, name varchar(255)");
+			db.CreateTable("my_first_table", "id int not null identity, name varchar(255)");
 
 			var table = db["my_first_table"];
 			table.Count.ShouldEqual(0);

@@ -27,6 +27,21 @@ namespace SequelSharp {
 		public List<string> ColumnNames {
 			get { return Columns.Select(c => c.Name).ToList(); }
 		}
+
+		public int Count {
+			get { return (int) Database.ExecuteScalar(string.Format("SELECT COUNT(*) FROM {0}", this.Name)); }
+		}
+
+		public int Insert(object columns) {
+			return Insert(Util.ObjectToDictionary(columns));
+		}
+		public int Insert(IDictionary<string, object> columns) {
+			var columnNames      = string.Join(", ", columns.Keys.ToArray());
+			var columnParameters = string.Join(", ", columns.Keys.Select(key => "@" + key).ToArray());
+			var sql              = string.Format("INSERT INTO {0} ({1}) values ({2})", this.Name, columnNames, columnParameters);
+
+			return Database.ExecuteNonQuery(sql, columns);
+		}
 	}
 
 	public class ColumnList : List<Column>, IList<Column> {
@@ -80,12 +95,7 @@ namespace SequelSharp {
 		}
 
 		public int ExecuteNonQuery(string sql) {
-			Console.WriteLine("ExecuteNonQuery('{0}')", sql);
-			var command = CreateCommand(sql);
-			using (var connection = command.Connection) {
-				connection.Open();
-				return command.ExecuteNonQuery();
-			}
+			return ExecuteNonQuery(sql, null);
 		}
 
 		public int ExecuteNonQuery(string sql, object parameters) {
@@ -102,7 +112,26 @@ namespace SequelSharp {
 			}
 		}
 
+		public object ExecuteScalar(string sql) {
+			return ExecuteScalar(sql, null);
+		}
+
+		public object ExecuteScalar(string sql, object parameters) {
+			return ExecuteScalar(sql, Util.ObjectToDictionary(parameters));
+		}
+
+		public object ExecuteScalar(string sql, IDictionary<string, object> parameters) {
+			Console.WriteLine("ExecuteScalar('{0}', [parameters])", sql);
+			var command = CreateCommand(sql);
+			AddCommandParameters(command, parameters);
+			using (var connection = command.Connection) {
+				connection.Open();
+				return command.ExecuteScalar();
+			}
+		}
+
 		public void AddCommandParameters(DbCommand command, IDictionary<string, object> parameters) {
+			if (parameters == null) return;
 			foreach (var param in parameters) {
 				var dbParam           = command.CreateParameter();
 				dbParam.ParameterName = "@" + param.Key;

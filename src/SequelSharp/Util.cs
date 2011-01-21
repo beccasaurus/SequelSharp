@@ -10,6 +10,7 @@ namespace SequelSharp {
 	public static class Util {
 
         public static IDictionary<string, object> ObjectToDictionary(this object anonymousType) {
+			if (anonymousType == null) return null;
             var attr = BindingFlags.Public | BindingFlags.Instance;
             var dict = new Dictionary<string, object>();
             foreach (var property in anonymousType.GetType().GetProperties(attr))
