@@ -67,37 +67,15 @@ namespace SequelSharp {
 		}
 
 		public TableRowList All {
-			get {
-				// TODO dry this up ...
-				var rows = new TableRowList();
-				Database.ExecuteReader("select * from " + this.Name, reader => {
-					while (reader.Read())
-						rows.Add(reader);
-				});
-				return rows;
-			}
+			get { return Database.GetRows("select * from " + this.Name); }
 		}
 
 		public TableRow First {
-			get {
-				var rows = new TableRowList();
-				Database.ExecuteReader("select top 1 * from " + this.Name, reader => {
-					while (reader.Read())
-						rows.Add(reader);
-				});
-				return rows.FirstOrDefault();
-			}
+			get { return Database.GetRow("select top 1 * from " + this.Name); }
 		}
 
 		public TableRow Last {
-			get {
-				var rows = new TableRowList();
-				Database.ExecuteReader("select top 1 * from " + this.Name + " order by " + this.KeyName + " desc", reader => {
-					while (reader.Read())
-						rows.Add(reader);
-				});
-				return rows.FirstOrDefault();
-			}
+			get { return Database.GetRow("select top 1 * from " + this.Name + " order by " + this.KeyName + " desc"); }
 		}
 	}
 
@@ -151,8 +129,17 @@ namespace SequelSharp {
 		}
 
 		public void ExecuteReader(string sql, Action<DbDataReader> action) {
-			Console.WriteLine("ExecuteReader('{0}')", sql);
+			ExecuteReader(sql, null, action);
+		}
+
+		public void ExecuteReader(string sql, object parameters, Action<DbDataReader> action) {
+			ExecuteReader(sql, Util.ObjectToDictionary(parameters), action);
+		}
+
+		public void ExecuteReader(string sql, IDictionary<string, object> parameters, Action<DbDataReader> action) {
+			Console.WriteLine("ExecuteReader('{0}', {1})", sql, parameters == null ? "null" : string.Join(", ", parameters.Select(i => i.Key + " = " + i.Value.ToString()).ToArray()));
 			var command = CreateCommand(sql);
+			AddCommandParameters(command, parameters);
 			using (var connection = command.Connection) {
 				connection.Open();
 				using (var reader = command.ExecuteReader())
@@ -194,6 +181,35 @@ namespace SequelSharp {
 				connection.Open();
 				return command.ExecuteScalar();
 			}
+		}
+
+		public TableRowList GetRows(string sql) {
+			return GetRows(sql, null);
+		}
+
+		public TableRowList GetRows(string sql, object parameters) {
+			return GetRows(sql, Util.ObjectToDictionary(parameters));
+		}
+
+		public TableRowList GetRows(string sql, IDictionary<string, object> parameters) {
+			var rows = new TableRowList();
+			ExecuteReader(sql, parameters, reader => {
+				while (reader.Read())
+					rows.Add(reader);
+			});
+			return rows;
+		}
+
+		public TableRow GetRow(string sql) {
+			return GetRow(sql, null);
+		}
+
+		public TableRow GetRow(string sql, object parameters) {
+			return GetRow(sql, Util.ObjectToDictionary(parameters));
+		}
+
+		public TableRow GetRow(string sql, IDictionary<string, object> parameters) {
+			return GetRows(sql, parameters).FirstOrDefault();
 		}
 
 		public void AddCommandParameters(DbCommand command, IDictionary<string, object> parameters) {
