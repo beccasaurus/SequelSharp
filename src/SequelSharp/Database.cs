@@ -15,16 +15,16 @@ namespace SequelSharp {
 
 		public string TableName { get { return Table.Name; } }
 
-		public int Update(object columns) {
-			return Update(Util.ObjectToDictionary(columns));
-		}
-
 		public object Key {
 			get { return this[Table.KeyName]; }
 		}
 
 		public Database Database {
 			get { return Table.Database; }
+		}
+
+		public int Update(object columns) {
+			return Update(Util.ObjectToDictionary(columns));
 		}
 
 		public int Update(IDictionary<string, object> columns) {
@@ -286,8 +286,15 @@ namespace SequelSharp {
 
 		public virtual DbType StringToDbType(string name) {
 			switch (name.ToLower().Trim()) {
-				case "int":     return DbType.Int32;
-				case "varchar": return DbType.String;
+				case "int":              return DbType.Int32;
+				case "char":             return DbType.String;
+				case "nchar":            return DbType.String;
+				case "varchar":          return DbType.String;
+				case "nvarchar":         return DbType.String;
+				case "bit":              return DbType.Boolean;
+				case "datetime":         return DbType.DateTime;
+				case "tinyint":          return DbType.Double;
+				case "uniqueidentifier": return DbType.Guid;
 				default:
 					throw new Exception("Don't know what DbType to return for: " + name);
 			}
