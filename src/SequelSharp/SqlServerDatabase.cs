@@ -56,7 +56,7 @@ namespace SequelSharp {
 		// Right now, this ONLY works if your ConnectionString uses this format:
 		//   Initial Catalog=...
 		public void Use(string databaseName){
-			Console.WriteLine("Use('{0}')", databaseName);
+			Sequel.Log("Use('{0}')", databaseName);
 			ConnectionString = Regex.Replace(ConnectionString, "Initial Catalog=[^;]+", "Initial Catalog=" + databaseName);
 		}
 		#endregion

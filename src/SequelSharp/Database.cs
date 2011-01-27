@@ -159,7 +159,7 @@ namespace SequelSharp {
 		}
 
 		public void ExecuteReader(string sql, IDictionary<string, object> parameters, Action<DbDataReader> action) {
-			Console.WriteLine("ExecuteReader('{0}', {1})", sql, parameters == null ? "null" : string.Join(", ", parameters.Select(i => i.Key + " = " + i.Value.ToString()).ToArray()));
+			Sequel.Log("ExecuteReader('{0}', {1})", sql, parameters == null ? "null" : string.Join(", ", parameters.Select(i => i.Key + " = " + i.Value.ToString()).ToArray()));
 			var command = CreateCommand(sql);
 			AddCommandParameters(command, parameters);
 			using (var connection = command.Connection) {
@@ -178,7 +178,7 @@ namespace SequelSharp {
 		}
 
 		public int ExecuteNonQuery(string sql, IDictionary<string, object> parameters) {
-			Console.WriteLine("ExecuteNonQuery('{0}', {1})", sql, parameters == null ? "null" : string.Join(", ", parameters.Select(i => i.Key + " = " + i.Value.ToString()).ToArray()));
+			Sequel.Log("ExecuteNonQuery('{0}', {1})", sql, parameters == null ? "null" : string.Join(", ", parameters.Select(i => i.Key + " = " + i.Value.ToString()).ToArray()));
 			var command = CreateCommand(sql);
 			AddCommandParameters(command, parameters);
 			using (var connection = command.Connection) {
@@ -196,7 +196,7 @@ namespace SequelSharp {
 		}
 
 		public object ExecuteScalar(string sql, IDictionary<string, object> parameters) {
-			Console.WriteLine("ExecuteScalar('{0}', {1})", sql, parameters == null ? "null" : string.Join(", ", parameters.Select(i => i.Key + " = " + i.Value.ToString()).ToArray()));
+			Sequel.Log("ExecuteScalar('{0}', {1})", sql, parameters == null ? "null" : string.Join(", ", parameters.Select(i => i.Key + " = " + i.Value.ToString()).ToArray()));
 			var command = CreateCommand(sql);
 			AddCommandParameters(command, parameters);
 			using (var connection = command.Connection) {

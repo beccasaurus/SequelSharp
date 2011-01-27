@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
@@ -10,6 +11,17 @@ namespace SequelSharp {
     /// Provides the main DSL for connecting to databases, eg. Sequel.SqlServer(server: "localhost\sqlexpress", database: "MyDatabase");
     /// </summary>
     public class Sequel {
+
+		/// <summary>If set to true, log messages will be sent do Sequel.LogOutput (Console.Out by default)</summary>
+		public static bool Verbose = true;
+
+		/// <summary>A TextWriter that calls to Sequel.Log() write to if Sequel.Verbose is set to true.  (Console.Out by default)</summary>
+		public static TextWriter LogOutput = Console.Out;
+
+		public static void Log(string message, params object[] objects) {
+			if (Sequel.Verbose && Sequel.LogOutput != null)
+				LogOutput.WriteLine(string.Format(message, objects));
+		}
 
 		/// <summary>If the type of database you want to connect to is not specified, this Type is used</summary>
 		public static Type DefaultDatabaseType = typeof(SqlServerDatabase);
