@@ -294,6 +294,7 @@ namespace SequelSharp {
 				case "bit":              return DbType.Boolean;
 				case "datetime":         return DbType.DateTime;
 				case "tinyint":          return DbType.Double;
+				case "smallint":         return DbType.Int32;
 				case "uniqueidentifier": return DbType.Guid;
 				default:
 					throw new Exception("Don't know what DbType to return for: " + name);
